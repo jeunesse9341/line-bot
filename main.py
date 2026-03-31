@@ -3,13 +3,14 @@ import requests
 from openai import OpenAI
 from fastapi import FastAPI, Request
 
+# 🔥 設定
+LINE_TOKEN = "SJf2O2LASoEHeetmLRbxF/8miebqmnuNHD8y7PHV5zqDykovIDJQ/IyxzhgasdthCMgwpZq3ZQUVVd7rXW/kvJg6C6rBH4uYNGQsGsC7jbS4cE4N5MKmS0Mdu7VXfZ1yfjqqlox22hNuGlU2+JVchwdB04t89/1O/w1cDnyilFU="
 client = OpenAI()
+
 app = FastAPI()
 
-LINE_TOKEN = "ここはそのまま"
 
-
-# 🔥 AI認識関数
+# 🔥 AIで商品認識
 def recognize_product(image_path):
     with open(image_path, "rb") as f:
         base64_image = base64.b64encode(f.read()).decode("utf-8")
@@ -48,40 +49,6 @@ def recognize_product(image_path):
     return response.choices[0].message.content
 
 
-# 🔥 webhook
-@app.post("/webhook")
-async def webhook(req: Request):
-    body = await req.json()
-
-    for event in body["events"]:
-        if event["type"] == "message":
-            reply_token = event["replyToken"]
-
-            # 画像チェック
-            if event["message"]["type"] == "image":
-
-                message_id = event["message"]["id"]
-
-                headers = {
-                    "Authorization": f"Bearer {LINE_TOKEN}"
-                }
-
-                image_url = f"https://api-data.line.me/v2/bot/message/{message_id}/content"
-                response = requests.get(image_url, headers=headers)
-
-                with open("image.jpg", "wb") as f:
-                    f.write(response.content)
-
-                result = recognize_product("image.jpg")
-
-                send_line(reply_token, result)
-
-            else:
-                send_line(reply_token, "画像送ってね📸")
-
-    return {"status": "ok"}
-
-
 # 🔥 LINE返信
 def send_line(reply_token, text):
     url = "https://api.line.me/v2/bot/message/reply"
@@ -97,3 +64,40 @@ def send_line(reply_token, text):
     }
 
     requests.post(url, headers=headers, json=data)
+
+
+# 🔥 webhook
+@app.post("/webhook")
+async def webhook(req: Request):
+    body = await req.json()
+
+    for event in body["events"]:
+        if event["type"] == "message":
+            reply_token = event["replyToken"]
+
+            # デバッグ（まずこれで確認）
+            if event["message"]["type"] == "text":
+                send_line(reply_token, "画像送ってね📸")
+                return {"status": "ok"}
+
+            if event["message"]["type"] == "image":
+                message_id = event["message"]["id"]
+
+                headers = {
+                    "Authorization": f"Bearer {LINE_TOKEN}"
+                }
+
+                image_url = f"https://api-data.line.me/v2/bot/message/{message_id}/content"
+                response = requests.get(image_url, headers=headers)
+
+                with open("image.jpg", "wb") as f:
+                    f.write(response.content)
+
+                try:
+                    result = recognize_product("image.jpg")
+                except Exception as e:
+                    result = f"AIエラー: {str(e)}"
+
+                send_line(reply_token, result)
+
+    return {"status": "ok"}
