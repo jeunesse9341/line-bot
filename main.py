@@ -163,7 +163,7 @@ async def webhook(req: Request):
                     else:
                         price_text = f"\n相場：{ai_price}（AI推定）"
 
-                    final_text = result + price_text
+                    final_text = result
 
                 except Exception as e:
                     final_text = f"エラー: {str(e)}"
