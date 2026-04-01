@@ -1,5 +1,7 @@
 import base64
 import requests
+import re
+from bs4 import BeautifulSoup
 from openai import OpenAI
 from fastapi import FastAPI, Request
 
@@ -12,6 +14,32 @@ app = FastAPI()
 
 # 🔥 AIで商品認識
 def recognize_product(image_path):
+    def get_mercari_prices(keyword):
+    url = f"https://www.mercari.com/jp/search/?keyword={keyword}&status=sold_out"
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    res = requests.get(url, headers=headers)
+    soup = BeautifulSoup(res.text, "html.parser")
+
+    prices = []
+
+    for item in soup.select(".items-box-price"):
+        price = re.sub(r"[¥,]", "", item.text)
+        if price.isdigit():
+            prices.append(int(price))
+
+    return prices[:10]
+
+
+def extract_keyword(ai_result):
+    lines = ai_result.split("\n")
+    for line in lines:
+        if "商品名" in line:
+            return line.replace("・商品名", "").replace("商品名", "").replace("：", "").strip()
+    return ai_result[:20]
     with open(image_path, "rb") as f:
         base64_image = base64.b64encode(f.read()).decode("utf-8")
 
@@ -100,9 +128,22 @@ async def webhook(req: Request):
 
                 try:
                     result = recognize_product("image.jpg")
+
+keyword = extract_keyword(result)
+prices = get_mercari_prices(keyword)
+
+if prices:
+    avg_price = sum(prices) // len(prices)
+    price_text = f"\n平均販売価格：約{avg_price}円"
+else:
+    price_text = "\n価格取得できませんでした"
+
+final_text = result + price_text
+
+send_line(reply_token, final_text)
                 except Exception as e:
                     result = f"AIエラー: {str(e)}"
 
-                send_line(reply_token, result)
+                
 
     return {"status": "ok"}
