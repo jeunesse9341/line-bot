@@ -154,22 +154,22 @@ async def webhook(req: Request):
                 with open("image.jpg", "wb") as f:
                     f.write(response.content)
 
-try:
-    result = recognize_product("image.jpg")
+                try:
+                    result = recognize_product("image.jpg")
 
-    # 🔥 キーワード取得
-    keywords = extract_keywords(result)
+                    # 🔥 キーワード取得
+                    keywords = extract_keywords(result)
 
-    # 🔥 複数キーワードで価格取得
-    prices = []
-    for kw in keywords:
-        prices += get_mercari_prices(kw)
+                    # 🔥 複数検索（今は使わなくてもOK）
+                    prices = []
+                    for kw in keywords:
+                        prices += get_mercari_prices(kw)
 
-    # 🔥 価格処理（今回は表示しないからOK）
-    final_text = result
+                    # 🔥 表示はAIのみ
+                    final_text = result
 
-except Exception as e:
-    final_text = f"エラー: {str(e)}"
+                except Exception as e:
+                    final_text = f"エラー: {str(e)}"
 
                 send_line(reply_token, final_text)
 
