@@ -12,9 +12,8 @@ client = OpenAI()
 app = FastAPI()
 
 
-# 🔥 AIで商品認識
-def recognize_product(image_path):
-    def get_mercari_prices(keyword):
+# 🔥 メルカリ価格取得
+def get_mercari_prices(keyword):
     url = f"https://www.mercari.com/jp/search/?keyword={keyword}&status=sold_out"
     
     headers = {
@@ -34,12 +33,17 @@ def recognize_product(image_path):
     return prices[:10]
 
 
+# 🔥 キーワード抽出
 def extract_keyword(ai_result):
     lines = ai_result.split("\n")
     for line in lines:
         if "商品名" in line:
             return line.replace("・商品名", "").replace("商品名", "").replace("：", "").strip()
     return ai_result[:20]
+
+
+# 🔥 AIで商品認識
+def recognize_product(image_path):
     with open(image_path, "rb") as f:
         base64_image = base64.b64encode(f.read()).decode("utf-8")
 
@@ -108,7 +112,6 @@ async def webhook(req: Request):
         if event["type"] == "message":
             reply_token = event["replyToken"]
 
-            # デバッグ（まずこれで確認）
             if event["message"]["type"] == "text":
                 send_line(reply_token, "画像送ってね📸")
                 return {"status": "ok"}
@@ -129,21 +132,20 @@ async def webhook(req: Request):
                 try:
                     result = recognize_product("image.jpg")
 
-keyword = extract_keyword(result)
-prices = get_mercari_prices(keyword)
+                    keyword = extract_keyword(result)
+                    prices = get_mercari_prices(keyword)
 
-if prices:
-    avg_price = sum(prices) // len(prices)
-    price_text = f"\n平均販売価格：約{avg_price}円"
-else:
-    price_text = "\n価格取得できませんでした"
+                    if prices:
+                        avg_price = sum(prices) // len(prices)
+                        price_text = f"\n平均販売価格：約{avg_price}円"
+                    else:
+                        price_text = "\n価格取得できませんでした"
 
-final_text = result + price_text
+                    final_text = result + price_text
 
-send_line(reply_token, final_text)
                 except Exception as e:
-                    result = f"AIエラー: {str(e)}"
+                    final_text = f"エラー: {str(e)}"
 
-                
+                send_line(reply_token, final_text)
 
     return {"status": "ok"}
