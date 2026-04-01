@@ -36,11 +36,11 @@ def get_mercari_prices(keyword):
 
 
 # 🔥 AI結果からキーワード抽出
-def extract_keyword(ai_result):
+def extract_keywords(ai_result):
     for line in ai_result.split("\n"):
         if "メルカリ検索キーワード" in line:
-            return line.split("：")[-1].strip()
-    return ai_result[:20]
+            return [kw.strip() for kw in line.split("：")[-1].split("、")]
+    return []
 
 
 # 🔥 AI結果から価格抽出
