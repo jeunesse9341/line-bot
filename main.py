@@ -25,10 +25,12 @@ def get_mercari_prices(keyword):
 
     prices = []
 
-    for item in soup.select(".items-box-price"):
-        price = re.sub(r"[¥,]", "", item.text)
-        if price.isdigit():
-            prices.append(int(price))
+    for span in soup.find_all("span"):
+        text = span.get_text()
+        if "¥" in text:
+            price = re.sub(r"[¥,]", "", text)
+            if price.isdigit():
+                prices.append(int(price))
 
     return prices[:10]
 
