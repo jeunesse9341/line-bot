@@ -17,7 +17,9 @@ def get_mercari_prices(keyword):
     url = f"https://www.mercari.com/jp/search/?keyword={keyword}&status=sold_out"
     
     headers = {
-        "User-Agent": "Mozilla/5.0"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Accept-Language": "ja-JP,ja;q=0.9",
+        "Referer": "https://www.mercari.com/"
     }
 
     res = requests.get(url, headers=headers)
@@ -34,15 +36,12 @@ def get_mercari_prices(keyword):
 
     return prices[:10]
 
-
 # 🔥 キーワード抽出
 def extract_keyword(ai_result):
-    lines = ai_result.split("\n")
-    for line in lines:
-        if "商品名" in line:
-            return line.replace("・商品名", "").replace("商品名", "").replace("：", "").strip()
+    for line in ai_result.split("\n"):
+        if "メルカリ検索キーワード" in line:
+            return line.split("：")[-1].strip()
     return ai_result[:20]
-
 
 # 🔥 AIで商品認識
 def recognize_product(image_path):
