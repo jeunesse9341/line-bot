@@ -5,21 +5,19 @@ from bs4 import BeautifulSoup
 from openai import OpenAI
 from fastapi import FastAPI, Request
 
-# 🔥 設定
 LINE_TOKEN = "SJf2O2LASoEHeetmLRbxF/8miebqmnuNHD8y7PHV5zqDykovIDJQ/IyxzhgasdthCMgwpZq3ZQUVVd7rXW/kvJg6C6rBH4uYNGQsGsC7jbS4cE4N5MKmS0Mdu7VXfZ1yfjqqlox22hNuGlU2+JVchwdB04t89/1O/w1cDnyilFU="
 client = OpenAI()
 
 app = FastAPI()
 
 
-# 🔥 メルカリ価格取得
+# 🔥 メルカリ価格取得（取れたらラッキー）
 def get_mercari_prices(keyword):
     url = f"https://www.mercari.com/jp/search/?keyword={keyword}&status=sold_out"
     
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        "Accept-Language": "ja-JP,ja;q=0.9",
-        "Referer": "https://www.mercari.com/"
+        "User-Agent": "Mozilla/5.0",
+        "Accept-Language": "ja-JP"
     }
 
     res = requests.get(url, headers=headers)
@@ -36,14 +34,24 @@ def get_mercari_prices(keyword):
 
     return prices[:10]
 
-# 🔥 キーワード抽出
+
+# 🔥 AI結果からキーワード抽出
 def extract_keyword(ai_result):
     for line in ai_result.split("\n"):
         if "メルカリ検索キーワード" in line:
             return line.split("：")[-1].strip()
     return ai_result[:20]
 
-# 🔥 AIで商品認識
+
+# 🔥 AI結果から価格抽出
+def extract_ai_price(ai_result):
+    for line in ai_result.split("\n"):
+        if "想定販売価格帯" in line:
+            return line.split("：")[-1].strip()
+    return "不明"
+
+
+# 🔥 AI商品認識（価格付き）
 def recognize_product(image_path):
     with open(image_path, "rb") as f:
         base64_image = base64.b64encode(f.read()).decode("utf-8")
@@ -59,18 +67,20 @@ def recognize_product(image_path):
                         "text": """
 この画像に写っている商品を必ず推測してください。
 
-完全に一致しなくてもいいので、
-見た目・ロゴ・形状から最も近い商品名を出してください。
+完全一致でなくてOKです。
+見た目・ロゴ・形状から最も近い商品を推定してください。
 
 【出力】
-・商品名
-・メーカー
-・型番（推測でもOK）
-・カテゴリ
-・メルカリ検索キーワード（3つ）
-・確信度（%）
+・商品名：
+・メーカー：
+・型番：
+・カテゴリ：
+・特徴：
+・メルカリ検索キーワード：
+・想定販売価格帯（円）：
+・確信度（%）：
 
-※絶対に「分からない」とは言わず、必ず候補を出す
+※絶対に「分からない」とは言わない
 """
                     },
                     {
@@ -133,14 +143,18 @@ async def webhook(req: Request):
                 try:
                     result = recognize_product("image.jpg")
 
+                    # 🔥 AI情報取得
                     keyword = extract_keyword(result)
+                    ai_price = extract_ai_price(result)
+
+                    # 🔥 メルカリ取得（取れたら上書き）
                     prices = get_mercari_prices(keyword)
 
                     if prices:
                         avg_price = sum(prices) // len(prices)
-                        price_text = f"\n平均販売価格：約{avg_price}円"
+                        price_text = f"\n相場：約{avg_price}円（メルカリ）🔥"
                     else:
-                        price_text = "\n価格取得できませんでした"
+                        price_text = f"\n相場：{ai_price}（AI推定）"
 
                     final_text = result + price_text
 
