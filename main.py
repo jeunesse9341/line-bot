@@ -158,9 +158,11 @@ async def webhook(req: Request):
                     result = recognize_product("image.jpg")
 
                     # 🔥 AI情報取得
-                    keyword = extract_keyword(result)
-                    ai_price = extract_ai_price(result)
+                    keywords = extract_keywords(result)
 
+prices = []
+for kw in keywords:
+    prices += get_mercari_prices(kw)
                     # 🔥 メルカリ取得（取れたら上書き）
                     prices = get_mercari_prices(keyword)
 
