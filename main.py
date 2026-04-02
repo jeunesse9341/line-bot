@@ -175,7 +175,7 @@ async def webhook(req: Request):
                 with open("image.jpg", "wb") as f:
                     f.write(response.content)
 
-                try:
+try:
     result = recognize_product("image.jpg")
 
     # 🔥 キーワード取得
