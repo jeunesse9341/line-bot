@@ -33,20 +33,26 @@ def get_mercari_prices(keyword):
                 prices.append(int(price))
 
     return prices[:10]
-def build_strong_keyword(keywords):
-    if not keywords:
-        return "バッグ"
+    
+def build_best_keyword(ai_result):
+    brand = ""
+    series = ""
 
-    # キーワード結合
-    combined = " ".join(keywords)
+    for line in ai_result.split("\n"):
+        if "メーカー" in line:
+            brand = line.split("：")[-1].strip()
+        if "シリーズ名" in line:
+            series = line.split("：")[-1].strip()
 
-    # ノイズ削除
-    remove_words = ["人気", "おすすめ", "美品", "中古", "送料無料"]
+    # 最強パターン
+    if brand and series:
+        return f"{brand} {series}"
 
-    for word in remove_words:
-        combined = combined.replace(word, "")
+    # fallback
+    if brand:
+        return brand
 
-    return combined.strip()
+    return "バッグ"
 
 
 def encode_keyword(keyword):
@@ -359,7 +365,7 @@ async def webhook(req: Request):
                         prices += get_mercari_prices(kw)
 
                     # 🔥 安全なキーワード取得
-                    keyword = build_strong_keyword(keywords)
+                    keyword = build_best_keyword(result)
 
 
                     # 🔥 リンク生成
