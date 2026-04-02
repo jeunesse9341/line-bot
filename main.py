@@ -34,49 +34,59 @@ def get_mercari_prices(keyword):
 
     return prices[:10]
     
+from urllib.parse import quote
+
+def normalize_category(category):
+    if not category:
+        return ""
+
+    # カテゴリ統一（ここ重要）
+    if "リュック" in category or "バックパック" in category:
+        return "バックパック"
+    if "靴" in category or "スニーカー" in category:
+        return "スニーカー"
+    if "ジャケット" in category or "アウター" in category:
+        return "ジャケット"
+
+    return category
+
+
 def build_best_keyword(ai_result):
     brand = ""
     series = ""
     category = ""
 
     for line in ai_result.split("\n"):
-        if "メーカー" in line:
+        line = line.strip()
+
+        # 完全一致で抽出（ここが超重要）
+        if line.startswith("- メーカー"):
             brand = line.split("：")[-1].strip()
-        if "シリーズ名" in line:
+
+        elif line.startswith("- シリーズ名"):
             series = line.split("：")[-1].strip()
-        if "カテゴリ" in line:
+
+        elif line.startswith("- カテゴリ"):
             category = line.split("：")[-1].strip()
 
-    # カテゴリを強制追加
+    # カテゴリ補正
+    category = normalize_category(category)
+
+    # 最強パターン（これがメイン）
     if brand and series and category:
         return f"{brand} {series} {category}"
 
+    # 次点
     if brand and category:
         return f"{brand} {category}"
 
-    if brand:
-        return brand
-
-    return "バッグ"
-
-    # 最強パターン
-    if brand and series:
-        return f"{brand} {series}"
-
-    # fallback
+    # 最低限
     if brand:
         return brand
 
     return "バッグ"
 
 
-from urllib.parse import quote
-
-def normalize_category(category):
-    if "リュック" in category:
-        return "バックパック"
-    return category
-    
 def encode_keyword(keyword):
     return quote(keyword)
 # 🔥 AI結果からキーワード抽出
