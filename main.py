@@ -49,6 +49,13 @@ def extract_ai_price(ai_result):
         if "想定販売価格帯" in line:
             return line.split("：")[-1].strip()
     return "不明"
+    
+    def get_recycle_links(keyword):
+    return {
+        "セカスト": f"https://www.2ndstreet.jp/search?keyword={keyword}",
+        "ブックオフ": f"https://shopping.bookoff.co.jp/search/keyword/{keyword}",
+        "駿河屋": f"https://www.suruga-ya.jp/search?category=&search_word={keyword}"
+    }
 
 
 # 🔥 AI商品認識（価格付き）
@@ -181,6 +188,13 @@ async def webhook(req: Request):
 
                     # 🔥 表示はAIのみ
                     final_text = result
+                    links = get_recycle_links(keywords[0])
+
+link_text = "\n\n🔗中古ショップ検索:\n"
+for name, url in links.items():
+    link_text += f"{name}: {url}\n"
+
+final_text = result + link_text
 
                 except Exception as e:
                     final_text = f"エラー: {str(e)}"
