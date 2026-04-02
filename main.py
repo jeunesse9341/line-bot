@@ -176,26 +176,31 @@ async def webhook(req: Request):
                     f.write(response.content)
 
                 try:
-                    result = recognize_product("image.jpg")
+    result = recognize_product("image.jpg")
 
-                    # 🔥 キーワード取得
-                    keywords = extract_keywords(result)
+    # 🔥 キーワード取得
+    keywords = extract_keywords(result)
 
-                    # 🔥 複数検索（今は使わなくてもOK）
-                    prices = []
-                    for kw in keywords:
-                        prices += get_mercari_prices(kw)
+    # 🔥 複数検索（今は使わなくてもOK）
+    prices = []
+    for kw in keywords:
+        prices += get_mercari_prices(kw)
 
-                    # 🔥 表示はAIのみ
-                    final_text = result
-                    links = get_recycle_links(keywords[0])
+    # 🔥 安全なキーワード取得（ここ重要）
+    keyword = keywords[0] if keywords else "バッグ"
 
-link_text = "\n\n🔗中古ショップ検索:\n"
-for name, url in links.items():
-    link_text += f"{name}: {url}\n"
+    # 🔥 リンク生成
+    links = get_recycle_links(keyword)
 
-final_text = result + link_text
+    link_text = "\n\n🔗中古ショップ検索:\n"
+    for name, url in links.items():
+        link_text += f"{name}: {url}\n"
 
+    final_text = result + link_text
+
+except Exception as e:
+    final_text = f"エラー: {str(e)}"
+                    
                 except Exception as e:
                     final_text = f"エラー: {str(e)}"
 
