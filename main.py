@@ -33,7 +33,24 @@ def get_mercari_prices(keyword):
                 prices.append(int(price))
 
     return prices[:10]
+def build_strong_keyword(keywords):
+    if not keywords:
+        return "バッグ"
 
+    # キーワード結合
+    combined = " ".join(keywords)
+
+    # ノイズ削除
+    remove_words = ["人気", "おすすめ", "美品", "中古", "送料無料"]
+
+    for word in remove_words:
+        combined = combined.replace(word, "")
+
+    return combined.strip()
+
+
+def encode_keyword(keyword):
+    return keyword.replace(" ", "+")
 
 # 🔥 AI結果からキーワード抽出
 def extract_keywords(ai_result):
@@ -51,10 +68,12 @@ def extract_ai_price(ai_result):
     return "不明"
     
 def get_recycle_links(keyword):
+    encoded = encode_keyword(keyword)
+
     return {
-        "セカスト": f"https://www.2ndstreet.jp/search?keyword={keyword}",
-        "ブックオフ": f"https://shopping.bookoff.co.jp/search/keyword/{keyword}",
-        "駿河屋": f"https://www.suruga-ya.jp/search?category=&search_word={keyword}"
+        "セカスト": f"https://www.2ndstreet.jp/search?keyword={encoded}",
+        "ブックオフ": f"https://shopping.bookoff.co.jp/search/keyword/{encoded}",
+        "駿河屋": f"https://www.suruga-ya.jp/search?search_word={encoded}"
     }
 
 
@@ -340,7 +359,8 @@ async def webhook(req: Request):
                         prices += get_mercari_prices(kw)
 
                     # 🔥 安全なキーワード取得
-                    keyword = keywords[0] if keywords else "バッグ"
+                    keyword = build_strong_keyword(keywords)
+
 
                     # 🔥 リンク生成
                     links = get_recycle_links(keyword)
