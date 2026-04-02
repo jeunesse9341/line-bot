@@ -37,12 +37,27 @@ def get_mercari_prices(keyword):
 def build_best_keyword(ai_result):
     brand = ""
     series = ""
+    category = ""
 
     for line in ai_result.split("\n"):
         if "メーカー" in line:
             brand = line.split("：")[-1].strip()
         if "シリーズ名" in line:
             series = line.split("：")[-1].strip()
+        if "カテゴリ" in line:
+            category = line.split("：")[-1].strip()
+
+    # カテゴリを強制追加
+    if brand and series and category:
+        return f"{brand} {series} {category}"
+
+    if brand and category:
+        return f"{brand} {category}"
+
+    if brand:
+        return brand
+
+    return "バッグ"
 
     # 最強パターン
     if brand and series:
@@ -57,6 +72,11 @@ def build_best_keyword(ai_result):
 
 from urllib.parse import quote
 
+def normalize_category(category):
+    if "リュック" in category:
+        return "バックパック"
+    return category
+    
 def encode_keyword(keyword):
     return quote(keyword)
 # 🔥 AI結果からキーワード抽出
