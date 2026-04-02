@@ -181,12 +181,12 @@ async def webhook(req: Request):
     # 🔥 キーワード取得
     keywords = extract_keywords(result)
 
-    # 🔥 複数検索（今は使わなくてもOK）
+    # 🔥 複数検索
     prices = []
     for kw in keywords:
         prices += get_mercari_prices(kw)
 
-    # 🔥 安全なキーワード取得（ここ重要）
+    # 🔥 安全なキーワード取得
     keyword = keywords[0] if keywords else "バッグ"
 
     # 🔥 リンク生成
@@ -196,14 +196,10 @@ async def webhook(req: Request):
     for name, url in links.items():
         link_text += f"{name}: {url}\n"
 
+    # 🔥 最終出力
     final_text = result + link_text
 
 except Exception as e:
     final_text = f"エラー: {str(e)}"
-                    
-                except Exception as e:
-                    final_text = f"エラー: {str(e)}"
 
-                send_line(reply_token, final_text)
-
-    return {"status": "ok"}
+send_line(reply_token, final_text)
