@@ -103,7 +103,68 @@ def extract_ai_price(ai_result):
         if "想定販売価格帯" in line:
             return line.split("：")[-1].strip()
     return "不明"
-    
+from urllib.parse import quote
+
+
+def normalize_category(category):
+    if not category:
+        return ""
+
+    if "リュック" in category or "バックパック" in category:
+        return "バックパック"
+    if "靴" in category or "スニーカー" in category:
+        return "スニーカー"
+    if "ジャケット" in category or "アウター" in category:
+        return "ジャケット"
+
+    return category
+
+
+def build_best_keyword(ai_result):
+    brand = ""
+    series = ""
+    category = ""
+
+    for line in ai_result.split("\n"):
+        line = line.strip()
+
+        if line.startswith("- メーカー"):
+            brand = line.split("：")[-1].strip()
+
+        elif line.startswith("- シリーズ名"):
+            series = line.split("：")[-1].strip()
+
+        elif line.startswith("- カテゴリ"):
+            category = line.split("：")[-1].strip()
+
+    # カテゴリ補正
+    category = normalize_category(category)
+
+    # 最強キーワード生成
+    if brand and series and category:
+        return f"{brand} {series} {category}"
+
+    if brand and category:
+        return f"{brand} {category}"
+
+    if brand:
+        return brand
+
+    return "バッグ"
+
+
+def encode_keyword(keyword):
+    return quote(keyword)
+
+
+def get_recycle_links(keyword):
+    encoded = encode_keyword(keyword)
+
+    return {
+        "セカスト": f"https://www.2ndstreet.jp/search?keyword={encoded}",
+        "ブックオフ": f"https://shopping.bookoff.co.jp/search/keyword/{encoded}",
+        "駿河屋": f"https://www.suruga-ya.jp/search?search_word={encoded}"
+    }    
 def get_recycle_links(keyword):
     encoded = encode_keyword(keyword)
 
