@@ -50,7 +50,7 @@ def extract_ai_price(ai_result):
             return line.split("：")[-1].strip()
     return "不明"
     
-    def get_recycle_links(keyword):
+def get_recycle_links(keyword):
     return {
         "セカスト": f"https://www.2ndstreet.jp/search?keyword={keyword}",
         "ブックオフ": f"https://shopping.bookoff.co.jp/search/keyword/{keyword}",
