@@ -55,9 +55,10 @@ def build_best_keyword(ai_result):
     return "バッグ"
 
 
-def encode_keyword(keyword):
-    return keyword.replace(" ", "+")
+from urllib.parse import quote
 
+def encode_keyword(keyword):
+    return quote(keyword)
 # 🔥 AI結果からキーワード抽出
 def extract_keywords(ai_result):
     for line in ai_result.split("\n"):
