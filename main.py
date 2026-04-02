@@ -465,7 +465,7 @@ async def webhook(req: Request):
 
                     link_text = "\n\n🔗中古ショップ検索:\n"
                     for name, url in links.items():
-                        link_text += f"{name}: {url}\n"
+                        link_text += f"{name}: <{url}>\n"
 
                     final_text = result + link_text
 
