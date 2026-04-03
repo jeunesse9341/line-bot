@@ -457,35 +457,58 @@ async def webhook(req: Request):
 
                 with open("image.jpg", "wb") as f:
                     f.write(response.content)
+# 🔥ここにtryを入れる（超重要）
+try:
+    result = recognize_product("image.jpg")
 
-                # 🔥ここにtryを入れる（超重要）
-                try:
-                    result = recognize_product("image.jpg")
+    import re
 
-                    # 🔥 キーワード取得
-                    keywords = extract_keywords(result)
+    # 🔥 中央値取得
+    median_price = 0
+    for line in result.split("\n"):
+        if "中央値" in line:
+            nums = re.findall(r"\d+", line)
+            if nums:
+                median_price = int(nums[0])
 
-                    # 🔥 複数検索
-                    prices = []
-                    for kw in keywords:
-                        prices += get_mercari_prices(kw)
+    # 🔥 仕入れ価格（値札）取得
+    purchase_price = None
+    for line in result.split("\n"):
+        if "仕入れ価格" in line:
+            nums = re.findall(r"\d+", line)
+            if nums:
+                purchase_price = int(nums[0])
 
-                    # 🔥 安全なキーワード取得
-                    keyword = build_best_keyword(result)
+    # 🔥 利益計算（値札あるときだけ）
+    profit_text = ""
+    if purchase_price and median_price:
+        fee = int(median_price * 0.1)
+        shipping = 700
+        profit = median_price - (purchase_price + fee + shipping)
 
+        profit_text = f"""
 
-                    # 🔥 リンク生成
-                    links = get_recycle_links(keyword)
+【仕入れ価格】
+¥{purchase_price}
 
-                    link_text = "\n\n🔗中古ショップ検索:\n"
-                    for name, url in links.items():
-                        link_text += f"{name}: <{url}>\n"
+【利益】
+¥{profit}
+"""
 
-                    final_text = result + link_text
+    # 🔥 キーワード生成
+    keyword = build_best_keyword(result)
 
-                except Exception as e:
-                    final_text = f"エラー: {str(e)}"
+    # 🔥 リンク生成
+    links = get_recycle_links(keyword)
 
-                send_line(reply_token, final_text)
+    link_text = "\n\n🔗中古ショップ検索:\n"
+    for name, url in links.items():
+        link_text += f"{name}: <{url}>\n"
 
-    return {"status": "ok"}
+    # 🔥 最終出力
+    final_text = result + profit_text + link_text
+
+except Exception as e:
+    final_text = f"エラー: {str(e)}"
+
+send_line(reply_token, final_text)
