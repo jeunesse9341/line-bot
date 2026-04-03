@@ -457,36 +457,37 @@ async def webhook(req: Request):
 
                 with open("image.jpg", "wb") as f:
                     f.write(response.content)
-# 🔥ここにtryを入れる（超重要）
-try:
-    result = recognize_product("image.jpg")
 
-    import re
+                # 🔥ここからtry（インデント超重要）
+                try:
+                    result = recognize_product("image.jpg")
 
-    # 🔥 中央値取得
-    median_price = 0
-    for line in result.split("\n"):
-        if "中央値" in line:
-            nums = re.findall(r"\d+", line)
-            if nums:
-                median_price = int(nums[0])
+                    import re
 
-    # 🔥 仕入れ価格（値札）取得
-    purchase_price = None
-    for line in result.split("\n"):
-        if "仕入れ価格" in line:
-            nums = re.findall(r"\d+", line)
-            if nums:
-                purchase_price = int(nums[0])
+                    # 🔥 中央値取得
+                    median_price = 0
+                    for line in result.split("\n"):
+                        if "中央値" in line:
+                            nums = re.findall(r"\d+", line)
+                            if nums:
+                                median_price = int(nums[0])
 
-    # 🔥 利益計算（値札あるときだけ）
-    profit_text = ""
-    if purchase_price and median_price:
-        fee = int(median_price * 0.1)
-        shipping = 700
-        profit = median_price - (purchase_price + fee + shipping)
+                    # 🔥 仕入れ価格取得
+                    purchase_price = None
+                    for line in result.split("\n"):
+                        if "仕入れ価格" in line:
+                            nums = re.findall(r"\d+", line)
+                            if nums:
+                                purchase_price = int(nums[0])
 
-        profit_text = f"""
+                    # 🔥 利益計算
+                    profit_text = ""
+                    if purchase_price and median_price:
+                        fee = int(median_price * 0.1)
+                        shipping = 700
+                        profit = median_price - (purchase_price + fee + shipping)
+
+                        profit_text = f"""
 
 【仕入れ価格】
 ¥{purchase_price}
@@ -495,20 +496,21 @@ try:
 ¥{profit}
 """
 
-    # 🔥 キーワード生成
-    keyword = build_best_keyword(result)
+                    # 🔥 キーワード
+                    keyword = build_best_keyword(result)
 
-    # 🔥 リンク生成
-    links = get_recycle_links(keyword)
+                    # 🔥 リンク
+                    links = get_recycle_links(keyword)
 
-    link_text = "\n\n🔗中古ショップ検索:\n"
-    for name, url in links.items():
-        link_text += f"{name}: <{url}>\n"
+                    link_text = "\n\n🔗中古ショップ検索:\n"
+                    for name, url in links.items():
+                        link_text += f"{name}: <{url}>\n"
 
-    # 🔥 最終出力
-    final_text = result + profit_text + link_text
+                    final_text = result + profit_text + link_text
 
-except Exception as e:
-    final_text = f"エラー: {str(e)}"
+                except Exception as e:
+                    final_text = f"エラー: {str(e)}"
 
-send_line(reply_token, final_text)
+                send_line(reply_token, final_text)
+
+    return {"status": "ok"}
