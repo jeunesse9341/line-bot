@@ -119,7 +119,16 @@ def normalize_category(category):
 
     return category
 
+import re
 
+def extract_purchase_price(ai_result):
+    for line in ai_result.split("\n"):
+        if "仕入れ価格" in line:
+            nums = re.findall(r"\d+", line)
+            if nums:
+                return int(nums[0])
+    return None
+    
 def build_best_keyword(ai_result):
     brand = ""
     series = ""
@@ -231,6 +240,11 @@ def recognize_product(image_path):
 ・想定販売価格帯（中古相場）（円）：（例：3000〜5000円）
 ・中央値（円）：
 ・確信度（%）
+
+【追加】
+画像内に値札や価格表示がある場合は、その金額を必ず読み取ってください。
+「仕入れ価格（円）：〇〇」として出力してください。
+値札が無い場合はこの項目は出力しないでください。
 
 ※絶対に「不明」は禁止
 """
